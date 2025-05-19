@@ -11,7 +11,6 @@ model User {
   id           Int      @id @default(autoincrement())
   username     String   @unique
   passwordHash String
-  role         String
   createdAt    DateTime @default(now())
   matchesCreated Match[] @relation("CreatedMatches")
   matchesReferee Match[] @relation("RefereedMatches")
