@@ -13,6 +13,14 @@ const PORT = 443;
 
 app.use(express.json());
 
+// 禁止缓存
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // ====================== 中间件 ======================
 const validateAuthInput = (req, res, next) => {
   const { username, password } = req.body;
@@ -28,7 +36,7 @@ const validateAuthInput = (req, res, next) => {
   if (!/^[a-zA-Z0-9_]{4,20}$/.test(username)) {
     return res.status(400).json({ error: '用户名只能包含字母、数字和下划线(4-20位)' });
   }
-
+  
   next();
 };
 
@@ -103,22 +111,26 @@ app.post('/api/login', validateAuthInput, async (req, res) => {
   }
 });
 
-// 用户列表（需要登录）
-app.get('/api/users', authenticateJWT, async (req, res) => {
+// 获取自己的用户信息（需要登录）
+app.get('/api/users/me', authenticateJWT, async (req, res) => {
   try {
-    const users = await prisma.user.findMany({
-      select: { id: true, username: true, createdAt: true },
-      orderBy: { createdAt: 'asc' }
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { id: true, username: true, createdAt: true }
     });
-    res.json(users);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    res.json({ success: true, user });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: '获取用户列表失败' });
+    res.status(500).json({ error: '获取用户信息失败' });
   }
 });
 
-// 获取比赛列表（需要登录）
-app.get('/api/matches', authenticateJWT, async (req, res) => {
+
+// 获取比赛信息
+app.get('/api/matches', async (req, res) => {
   try {
     const matches = await prisma.match.findMany({
       orderBy: { matchDate: 'asc' },
@@ -177,5 +189,5 @@ const httpsOptions = {
 };
 
 https.createServer(httpsOptions, app).listen(PORT, () => {
-  console.log(`✅ HTTPS running at: https://vballone.zrhan.top`);
+  console.log(`HTTPS running at: https://vballone.zrhan.top`);
 });
