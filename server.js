@@ -142,7 +142,8 @@ app.get('/api/matches', async (req, res) => {
       name: m.name,
       location: m.location,
       match_date: m.matchDate,
-      referee: m.referee.username
+      referee: m.referee.username,
+      status: m.status
     }));
 
     res.json(formatted);
@@ -171,7 +172,8 @@ app.post('/api/matches', authenticateJWT, async (req, res) => {
         location,
         matchDate: new Date(match_date),
         refereeId: referee.id,
-        createdById: req.user.userId
+        createdById: req.user.userId,
+        status: 'NOT_STARTED'  // 默认状态
       }
     });
 
@@ -185,11 +187,8 @@ app.post('/api/matches', authenticateJWT, async (req, res) => {
 // 修改比赛（需要登录，且只能由创建者修改）
 app.put('/api/matches/:id', authenticateJWT, async (req, res) => {
   const matchId = parseInt(req.params.id);
-  const { name, location, match_date } = req.body;
-  if (!name || !location || !match_date) {
-    return res.status(400).json({ error: '缺少字段：name, location, match_date' });
-  }
-
+  const { name, location, match_date, status } = req.body;
+  
   try {
     const match = await prisma.match.findUnique({ where: { id: matchId } });
 
@@ -202,13 +201,21 @@ app.put('/api/matches/:id', authenticateJWT, async (req, res) => {
       return res.status(403).json({ error: '无权限修改该比赛' });
     }
 
+    // 构建更新数据对象，只包含提供的字段
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (location !== undefined) updateData.location = location;
+    if (match_date !== undefined) updateData.matchDate = new Date(match_date);
+    if (status !== undefined) {
+      if (!['NOT_STARTED', 'IN_PROGRESS', 'FINISHED'].includes(status)) {
+        return res.status(400).json({ error: '无效的比赛状态' });
+      }
+      updateData.status = status;
+    }
+
     const updatedMatch = await prisma.match.update({
       where: { id: matchId },
-      data: {
-        name,
-        location,
-        matchDate: new Date(match_date)
-      }
+      data: updateData
     });
 
     res.json({ success: true, message: '比赛信息更新成功', match: updatedMatch });

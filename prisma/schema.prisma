@@ -22,6 +22,7 @@ model Match {
   location   String
   matchDate  DateTime
   createdAt  DateTime @default(now())
+  status     MatchStatus @default(NOT_STARTED)
 
   createdBy  User     @relation("CreatedMatches", fields: [createdById], references: [id])
   createdById Int
@@ -43,4 +44,10 @@ model MatchSet {
   createdAt DateTime @default(now())
 
   @@unique([matchId, round]) // 每个比赛的每一轮只能出现一次
+}
+
+enum MatchStatus {
+  NOT_STARTED  // 未开始
+  IN_PROGRESS  // 进行中
+  FINISHED     // 已结束
 }
