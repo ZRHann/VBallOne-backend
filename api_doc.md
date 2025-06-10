@@ -141,6 +141,62 @@
   }
   ```
 
+## 比赛轮次相关
+
+### 获取比赛轮次
+- 方法: `GET`
+- 路径: `/api/matches/:matchId/sets`
+- 描述: 获取某场比赛的所有轮次信息
+- 需要认证: 否
+- 响应:
+  ```json
+  {
+    "success": true,
+    "sets": [
+      {
+        "id": 1,
+        "round": 1,
+        "scoreA": 25,
+        "scoreB": 23,
+        "isPaused": false,
+        "matchId": 123,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    ]
+  }
+  ```
+
+### 创建比赛轮次
+- 方法: `POST`
+- 路径: `/api/matches/:matchId/sets`
+- 描述: 创建新的比赛轮次（仅比赛裁判可操作）
+- 需要认证: 是
+- 请求体:
+  ```json
+  {
+    "round": 1,        // 必填，轮次号
+    "scoreA": 25,      // 必填，A方比分
+    "scoreB": 23,      // 必填，B方比分
+    "isPaused": false  // 可选，是否暂停，默认false
+  }
+  ```
+- 响应:
+  ```json
+  {
+    "success": true,
+    "message": "轮次创建成功",
+    "set": {
+      "id": 1,
+      "round": 1,
+      "scoreA": 25,
+      "scoreB": 23,
+      "isPaused": false,
+      "matchId": 123,
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  }
+  ```
+
 ## 比赛状态说明
 
 比赛状态（status）有三种可能的值：

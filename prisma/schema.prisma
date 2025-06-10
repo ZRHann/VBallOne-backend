@@ -38,6 +38,7 @@ model MatchSet {
   round     Int      // 第几轮，比如 1、2、3
   scoreA    Int      // A方比分
   scoreB    Int      // B方比分
+  isPaused  Boolean  @default(false) // 该轮是否暂停
   match     Match    @relation(fields: [matchId], references: [id])
   matchId   Int
 
