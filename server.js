@@ -182,6 +182,42 @@ app.post('/api/matches', authenticateJWT, async (req, res) => {
   }
 });
 
+// 修改比赛（需要登录，且只能由创建者修改）
+app.put('/api/matches/:id', authenticateJWT, async (req, res) => {
+  const matchId = parseInt(req.params.id);
+  const { name, location, match_date } = req.body;
+  if (!name || !location || !match_date) {
+    return res.status(400).json({ error: '缺少字段：name, location, match_date' });
+  }
+
+  try {
+    const match = await prisma.match.findUnique({ where: { id: matchId } });
+
+    if (!match) {
+      return res.status(404).json({ error: '比赛不存在' });
+    }
+
+    // 权限控制：只有创建者能修改
+    if (match.createdById !== req.user.userId) {
+      return res.status(403).json({ error: '无权限修改该比赛' });
+    }
+
+    const updatedMatch = await prisma.match.update({
+      where: { id: matchId },
+      data: {
+        name,
+        location,
+        matchDate: new Date(match_date)
+      }
+    });
+
+    res.json({ success: true, message: '比赛信息更新成功', match: updatedMatch });
+  } catch (err) {
+    console.error('更新比赛失败:', err);
+    res.status(500).json({ error: '更新失败' });
+  }
+});
+
 // ====================== 启动 HTTPS 服务 ======================
 const httpsOptions = {
   key: fs.readFileSync('/etc/letsencrypt/live/vballone.zrhan.top/privkey.pem'),

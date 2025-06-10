@@ -12,9 +12,8 @@ model User {
   username     String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
-  matchesCreated Match[] @relation("CreatedMatches")
-  matchesReferee Match[] @relation("RefereedMatches")
-  MatchParticipant MatchParticipant[]
+  matchesCreated Match[]  @relation("CreatedMatches")
+  matchesReferee Match[]  @relation("RefereedMatches")
 }
 
 model Match {
@@ -30,15 +29,18 @@ model Match {
   referee    User     @relation("RefereedMatches", fields: [refereeId], references: [id])
   refereeId  Int
 
-  MatchParticipant MatchParticipant[]
+  sets       MatchSet[]
 }
 
-model MatchParticipant {
-  match   Match @relation(fields: [matchId], references: [id])
-  matchId Int
+model MatchSet {
+  id        Int      @id @default(autoincrement())
+  round     Int      // 第几轮，比如 1、2、3
+  scoreA    Int      // A方比分
+  scoreB    Int      // B方比分
+  match     Match    @relation(fields: [matchId], references: [id])
+  matchId   Int
 
-  user    User @relation(fields: [userId], references: [id])
-  userId  Int
+  createdAt DateTime @default(now())
 
-  @@id([matchId, userId])
+  @@unique([matchId, round]) // 每个比赛的每一轮只能出现一次
 }
