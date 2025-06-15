@@ -7,6 +7,7 @@ const config = require('./config');
 const authRoutes = require('./routes/auth');
 const matchesRoutes = require('./routes/matches');
 const matchSetsRoutes = require('./routes/matchSets');
+const usersRoutes = require('./routes/auth');
 
 dotenv.config();
 const app = express();
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 app.use('/api', authRoutes);
 app.use('/api/matches', matchesRoutes);
 app.use('/api/matches', matchSetsRoutes);
+app.use('/api/users', usersRoutes);
 
 // 启动 HTTPS 服务
 https.createServer(config.httpsOptions, app).listen(config.port, () => {
