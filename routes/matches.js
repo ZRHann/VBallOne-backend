@@ -86,7 +86,8 @@ router.put('/:id', authenticateJWT, async (req, res) => {
       return res.status(404).json({ error: '比赛不存在' });
     }
 
-    if (match.createdById !== req.user.userId) {
+    // 只有比赛创建者或裁判本人可以修改
+    if (match.createdById !== req.user.userId && match.refereeId !== req.user.userId) {
       return res.status(403).json({ error: '无权限修改该比赛' });
     }
 

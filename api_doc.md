@@ -120,7 +120,7 @@
 ### 更新比赛
 - 方法: `PUT`
 - 路径: `/api/matches/:id`
-- 描述: 更新比赛信息（仅比赛创建者可修改）
+- 描述: 更新比赛信息（仅比赛创建者和裁判可修改）
 - 需要认证: 是
 - 请求体:
   ```json
@@ -145,6 +145,24 @@
       "status": "NOT_STARTED",
       "rounds": []
     }
+  }
+  ```
+
+### 获取比赛详情
+- 方法: `GET`
+- 路径: `/api/matches/:id`
+- 描述: 根据 ID 获取单场比赛信息
+- 需要认证: 否
+- 响应:
+  ```json
+  {
+    "id": 123,
+    "name": "string",
+    "location": "string",
+    "match_date": "2024-01-01T00:00:00Z",
+    "referee": "string",
+    "status": "NOT_STARTED",
+    "rounds": []
   }
   ```
 
@@ -256,20 +274,3 @@
 - 409: 资源冲突（如用户名已存在）
 - 500: 服务器内部错误
 
-### 获取比赛详情
-- 方法: `GET`
-- 路径: `/api/matches/:id`
-- 描述: 根据 ID 获取单场比赛信息
-- 需要认证: 否
-- 响应:
-  ```json
-  {
-    "id": 123,
-    "name": "string",
-    "location": "string",
-    "match_date": "2024-01-01T00:00:00Z",
-    "referee": "string",
-    "status": "NOT_STARTED",
-    "rounds": []
-  }
-  ```
