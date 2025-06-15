@@ -88,7 +88,8 @@
       "location": "string",
       "match_date": "2024-01-01T00:00:00Z",
       "referee": "string",
-      "status": "NOT_STARTED"
+      "status": "NOT_STARTED",
+      "rounds": []
     }
   ]
   ```
@@ -127,7 +128,8 @@
     "name": "string",          // 可选
     "location": "string",      // 可选
     "match_date": "string",    // 可选
-    "status": "string"         // 可选，枚举值：NOT_STARTED/IN_PROGRESS/FINISHED
+    "status": "string",        // 可选，枚举值：NOT_STARTED/IN_PROGRESS/FINISHED
+    "rounds": []               // 可选，比赛数据，数组（JSON），完整替换
   }
   ```
 - 响应:
@@ -140,7 +142,8 @@
       "name": "string",
       "location": "string",
       "matchDate": "2024-01-01T00:00:00Z",
-      "status": "NOT_STARTED"
+      "status": "NOT_STARTED",
+      "rounds": []
     }
   }
   ```
@@ -161,7 +164,8 @@
       "location": "体育馆",
       "match_date": "2024-01-01T00:00:00Z",
       "referee": "张三",
-      "status": "NOT_STARTED"
+      "status": "NOT_STARTED",
+      "rounds": []
     },
     {
       "id": 124,
@@ -169,7 +173,8 @@
       "location": "市体育馆",
       "match_date": "2024-01-02T00:00:00Z",
       "referee": "李四",
-      "status": "IN_PROGRESS"
+      "status": "IN_PROGRESS",
+      "rounds": []
     }
   ]
   ```
@@ -184,61 +189,49 @@
   - 比赛名称中的词完全匹配：+3分
   - 地点中的词完全匹配：+2分
 
-## 比赛轮次相关
+## 比赛 rounds 字段说明
+`rounds` 为数组，格式如下：
 
-### 获取比赛轮次
-- 方法: `GET`
-- 路径: `/api/matches/:matchId/sets`
-- 描述: 获取某场比赛的所有轮次信息
-- 需要认证: 否
-- 响应:
-  ```json
+```json
+[
   {
-    "success": true,
-    "sets": [
-      {
-        "id": 1,
-        "round": 1,
-        "scoreA": 25,
-        "scoreB": 23,
-        "isPaused": false,
-        "matchId": 123,
-        "createdAt": "2024-01-01T00:00:00Z"
-      }
-    ]
-  }
-  ```
-
-### 创建比赛轮次
-- 方法: `POST`
-- 路径: `/api/matches/:matchId/sets`
-- 描述: 创建新的比赛轮次（仅比赛裁判可操作）
-- 需要认证: 是
-- 请求体:
-  ```json
-  {
-    "round": 1,        // 必填，轮次号
-    "scoreA": 25,      // 必填，A方比分
-    "scoreB": 23,      // 必填，B方比分
-    "isPaused": false  // 可选，是否暂停，默认false
-  }
-  ```
-- 响应:
-  ```json
-  {
-    "success": true,
-    "message": "轮次创建成功",
-    "set": {
-      "id": 1,
-      "round": 1,
-      "scoreA": 25,
-      "scoreB": 23,
-      "isPaused": false,
-      "matchId": 123,
-      "createdAt": "2024-01-01T00:00:00Z"
+    "round": 1,
+    "finished": false,
+    "firstServe": "A",        // A / B
+    "curServeTeam": "B",
+    "serveIndex": { "A": 3, "B": 1 },
+    "lineup": {
+      "A": ["12","7","4","6","11","2"],
+      "B": ["3","8","10","5","1","9"]
+    },
+    "currentPlayers": {
+      "A": ["12","7","4","6","11","2"],
+      "B": ["3","8","10","5","1","9"]
+    },
+    "score": {
+      "A": [1,2,3,4,5],
+      "B": [0,1,1,2,2]
+    },
+    "substitutions": {
+      "A": [ { "out": "7", "in": "15" } ],
+      "B": []
+    },
+    "timeouts": {
+      "A": [ { "no": 1, "scoreA": 8, "scoreB": 6 } ],
+      "B": []
     }
-  }
-  ```
+  },
+  {
+    "round":2,
+    ...
+  },
+  ...
+]
+```
+
+说明：
+1. `创建比赛` 时，后端会强制将 `rounds` 设为空数组。
+2. 如需写入/更新局内数据，请调用 `更新比赛` 接口，提交完整的 `rounds` 数组，后端会整体替换。
 
 ## 比赛状态说明
 

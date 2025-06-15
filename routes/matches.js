@@ -25,7 +25,8 @@ router.get('/', async (req, res) => {
       location: m.location,
       match_date: m.matchDate,
       referee: m.referee.username,
-      status: m.status
+      status: m.status,
+      rounds: m.rounds
     }));
 
     res.json(formatted);
@@ -61,7 +62,8 @@ router.post('/', authenticateJWT, async (req, res) => {
         matchDate: parsedDate,
         refereeId: referee.id,
         createdById: req.user.userId,
-        status: 'NOT_STARTED'
+        status: 'NOT_STARTED',
+        rounds: []
       }
     });
 
@@ -75,7 +77,7 @@ router.post('/', authenticateJWT, async (req, res) => {
 // 修改比赛
 router.put('/:id', authenticateJWT, async (req, res) => {
   const matchId = parseInt(req.params.id);
-  const { name, location, match_date, status } = req.body;
+  const { name, location, match_date, status, rounds } = req.body;
   
   try {
     const match = await prisma.match.findUnique({ where: { id: matchId } });
@@ -103,6 +105,13 @@ router.put('/:id', authenticateJWT, async (req, res) => {
         return res.status(400).json({ error: '无效的比赛状态' });
       }
       updateData.status = status;
+    }
+
+    if (rounds !== undefined) {
+      if (!Array.isArray(rounds)) {
+        return res.status(400).json({ error: 'rounds 应为数组' });
+      }
+      updateData.rounds = rounds;
     }
 
     const updatedMatch = await prisma.match.update({
@@ -148,7 +157,8 @@ router.get('/search', async (req, res) => {
       location: m.location,
       match_date: m.matchDate,
       referee: m.referee.username,
-      status: m.status
+      status: m.status,
+      rounds: m.rounds
     }));
 
     res.json(result);
