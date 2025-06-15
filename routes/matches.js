@@ -5,6 +5,12 @@ const { authenticateJWT } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// 新增: 日期解析与校验函数
+function parseISODate(dateStr) {
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? null : date;
+}
+
 // 获取比赛列表
 router.get('/', async (req, res) => {
   try {
@@ -36,6 +42,12 @@ router.post('/', authenticateJWT, async (req, res) => {
     return res.status(400).json({ error: '缺少字段' });
   }
 
+  // 新增: 校验时间格式
+  const parsedDate = parseISODate(match_date);
+  if (!parsedDate) {
+    return res.status(400).json({ error: '无效的时间格式' });
+  }
+
   try {
     const referee = await prisma.user.findUnique({ where: { username: referee_username } });
     if (!referee) {
@@ -46,7 +58,7 @@ router.post('/', authenticateJWT, async (req, res) => {
       data: {
         name,
         location,
-        matchDate: new Date(match_date),
+        matchDate: parsedDate,
         refereeId: referee.id,
         createdById: req.user.userId,
         status: 'NOT_STARTED'
@@ -79,7 +91,13 @@ router.put('/:id', authenticateJWT, async (req, res) => {
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (location !== undefined) updateData.location = location;
-    if (match_date !== undefined) updateData.matchDate = new Date(match_date);
+    if (match_date !== undefined) {
+      const parsedDate = parseISODate(match_date);
+      if (!parsedDate) {
+        return res.status(400).json({ error: '无效的时间格式' });
+      }
+      updateData.matchDate = parsedDate;
+    }
     if (status !== undefined) {
       if (!['NOT_STARTED', 'IN_PROGRESS', 'FINISHED'].includes(status)) {
         return res.status(400).json({ error: '无效的比赛状态' });
