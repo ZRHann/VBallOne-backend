@@ -168,6 +168,41 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// 获取比赛详情
+router.get('/:id', async (req, res) => {
+  const matchId = parseInt(req.params.id);
+
+  if (isNaN(matchId)) {
+    return res.status(400).json({ error: '无效的比赛ID' });
+  }
+
+  try {
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: { referee: true }
+    });
+
+    if (!match) {
+      return res.status(404).json({ error: '比赛不存在' });
+    }
+
+    const result = {
+      id: match.id,
+      name: match.name,
+      location: match.location,
+      match_date: match.matchDate,
+      referee: match.referee.username,
+      status: match.status,
+      rounds: match.rounds
+    };
+
+    res.json(result);
+  } catch (err) {
+    console.error('获取比赛详情失败:', err);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
 // 计算搜索结果相关度
 function calculateRelevance(match, query) {
   let score = 0;

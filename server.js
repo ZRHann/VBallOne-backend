@@ -6,7 +6,6 @@ const config = require('./config');
 // 路由
 const authRoutes = require('./routes/auth');
 const matchesRoutes = require('./routes/matches');
-const matchSetsRoutes = require('./routes/matchSets');
 const usersRoutes = require('./routes/auth');
 
 dotenv.config();
@@ -25,7 +24,6 @@ app.use((req, res, next) => {
 // 路由注册
 app.use('/api', authRoutes);
 app.use('/api/matches', matchesRoutes);
-app.use('/api/matches', matchSetsRoutes);
 app.use('/api/users', usersRoutes);
 
 // 启动 HTTPS 服务
