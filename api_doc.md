@@ -89,7 +89,8 @@
       "match_date": "2024-01-01T00:00:00Z",
       "referee": "string",
       "status": "NOT_STARTED",
-      "rounds": []
+      "round_record_data": {},
+      "score_board_data": {}
     }
   ]
   ```
@@ -129,7 +130,8 @@
     "location": "string",      // 可选
     "match_date": "string",    // 可选
     "status": "string",        // 可选，枚举值：NOT_STARTED/IN_PROGRESS/FINISHED
-    "rounds": []               // 可选，比赛数据，数组（JSON），完整替换
+    "round_record_data": {},   // 可选，整局记录 JSON
+    "score_board_data": {}     // 可选，比分面板 JSON
   }
   ```
 - 响应:
@@ -143,7 +145,8 @@
       "location": "string",
       "matchDate": "2024-01-01T00:00:00Z",
       "status": "NOT_STARTED",
-      "rounds": []
+      "round_record_data": {},
+      "score_board_data": {}
     }
   }
   ```
@@ -162,7 +165,8 @@
     "match_date": "2024-01-01T00:00:00Z",
     "referee": "string",
     "status": "NOT_STARTED",
-    "rounds": []
+    "round_record_data": {},
+    "score_board_data": {}
   }
   ```
 
@@ -183,7 +187,8 @@
       "match_date": "2024-01-01T00:00:00Z",
       "referee": "张三",
       "status": "NOT_STARTED",
-      "rounds": []
+      "round_record_data": {},
+      "score_board_data": {}
     },
     {
       "id": 124,
@@ -192,7 +197,8 @@
       "match_date": "2024-01-02T00:00:00Z",
       "referee": "李四",
       "status": "IN_PROGRESS",
-      "rounds": []
+      "round_record_data": {},
+      "score_board_data": {}
     }
   ]
   ```
@@ -208,48 +214,61 @@
   - 地点中的词完全匹配：+2分
 
 ## 比赛 rounds 字段说明
-`rounds` 为数组，格式如下：
+`round_record_data` 与 `score_board_data` 为数组，格式如下：
+
+### round_record_data 示例
+结构示例：
 
 ```json
-[
-  {
-    "round": 1,
-    "finished": false,
-    "firstServe": "A",        // A / B
-    "curServeTeam": "B",
-    "serveIndex": { "A": 3, "B": 1 },
-    "lineup": {
-      "A": ["12","7","4","6","11","2"],
-      "B": ["3","8","10","5","1","9"]
-    },
-    "currentPlayers": {
-      "A": ["12","7","4","6","11","2"],
-      "B": ["3","8","10","5","1","9"]
-    },
-    "score": {
-      "A": [1,2,3,4,5],
-      "B": [0,1,1,2,2]
-    },
-    "substitutions": {
-      "A": [ { "out": "7", "in": "15" } ],
-      "B": []
-    },
-    "timeouts": {
-      "A": [ { "no": 1, "scoreA": 8, "scoreB": 6 } ],
-      "B": []
-    }
+{
+  "lineup": {
+    "fir_playersA": ["12","8","3","9","1","5"],
+    "fir_playersB": ["6","11","4","7","2","10"],
+    "fir_serveteam": "A",
+    "cur_serveteam": "A",
+    "currentSet": 1,
+    "serveA": 3,
+    "serveB": 2
   },
-  {
-    "round":2,
-    ...
+  "substitutionRecordsA": [],
+  "substitutionRecordsB": [],
+  "scoreBoardData": {
+    "cur_serveteam": "B",
+    "serveA": 10,
+    "serveB": 11,
+    "isover": false,
+    "timeoutLogsA": [5],
+    "timeoutLogsB": [8,12]
   },
-  ...
-]
+  "currentServeTeam": "B",
+  "set1": {}
+}
+```
+
+### score_board_data 示例
+
+```json
+{
+  "scoreA": [1,2,3],
+  "scoreB": [0,1,1],
+  "lastScoreA": 3,
+  "lastScoreB": 1,
+  "pauseChanceA": 1,
+  "pauseChanceB": 0,
+  "timeoutLogsA": [],
+  "timeoutLogsB": [],
+  "set": 1,
+  "isExchange": false,
+  "cur_serveteam": "A",
+  "serveA": 3,
+  "serveB": 2,
+  "isover": false
+}
 ```
 
 说明：
-1. `创建比赛` 时，后端会强制将 `rounds` 设为空数组。
-2. 如需写入/更新局内数据，请调用 `更新比赛` 接口，提交完整的 `rounds` 数组，后端会整体替换。
+1. `创建比赛` 时，后端会默认 `round_record_data` 与 `score_board_data` 为空对象。
+2. 可通过 `PUT /matches/:id` 覆盖整块 JSON，或使用下文 **增量更新** 接口局部合并。
 
 ## 比赛状态说明
 
@@ -273,4 +292,11 @@
 - 404: 资源不存在
 - 409: 资源冲突（如用户名已存在）
 - 500: 服务器内部错误
+
+### 增量更新 round_record_data / score_board_data
+
+- 方法: `PATCH`
+- 路径 1: `/api/matches/:id/round_record_data`
+- 路径 2: `/api/matches/:id/score_board_data`
+- 描述: 对应字段增量合并更新（只需提交本次变动）
 

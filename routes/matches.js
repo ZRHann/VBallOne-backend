@@ -26,7 +26,6 @@ router.get('/', async (req, res) => {
       match_date: m.matchDate,
       referee: m.referee.username,
       status: m.status,
-      rounds: m.rounds
     }));
 
     res.json(formatted);
@@ -63,7 +62,8 @@ router.post('/', authenticateJWT, async (req, res) => {
         refereeId: referee.id,
         createdById: req.user.userId,
         status: 'NOT_STARTED',
-        rounds: []
+        roundRecordData: {},
+        scoreBoardData: {}
       }
     });
 
@@ -77,7 +77,7 @@ router.post('/', authenticateJWT, async (req, res) => {
 // 修改比赛
 router.put('/:id', authenticateJWT, async (req, res) => {
   const matchId = parseInt(req.params.id);
-  const { name, location, match_date, status, rounds } = req.body;
+  const { name, location, match_date, status, roundRecordData, scoreBoardData } = req.body;
   
   try {
     const match = await prisma.match.findUnique({ where: { id: matchId } });
@@ -102,17 +102,33 @@ router.put('/:id', authenticateJWT, async (req, res) => {
       updateData.matchDate = parsedDate;
     }
     if (status !== undefined) {
+      if (match.refereeId !== req.user.userId) {
+        return res.status(403).json({ error: '只有裁判可以修改比赛状态' });
+      }
       if (!['NOT_STARTED', 'IN_PROGRESS', 'FINISHED'].includes(status)) {
         return res.status(400).json({ error: '无效的比赛状态' });
       }
       updateData.status = status;
     }
 
-    if (rounds !== undefined) {
-      if (!Array.isArray(rounds)) {
-        return res.status(400).json({ error: 'rounds 应为数组' });
+    if (roundRecordData !== undefined) {
+      if (match.refereeId !== req.user.userId) {
+        return res.status(403).json({ error: '只有裁判可以修改比赛状态' });
       }
-      updateData.rounds = rounds;
+      if (typeof roundRecordData !== 'object') {
+        return res.status(400).json({ error: 'roundRecordData 应为对象' });
+      }
+      updateData.roundRecordData = roundRecordData;
+    }
+
+    if (scoreBoardData !== undefined) {
+      if (match.refereeId !== req.user.userId) {
+        return res.status(403).json({ error: '只有裁判可以修改比赛状态' });
+      }
+      if (typeof scoreBoardData !== 'object') {
+        return res.status(400).json({ error: 'scoreBoardData 应为对象' });
+      }
+      updateData.scoreBoardData = scoreBoardData;
     }
 
     const updatedMatch = await prisma.match.update({
@@ -159,7 +175,6 @@ router.get('/search', async (req, res) => {
       match_date: m.matchDate,
       referee: m.referee.username,
       status: m.status,
-      rounds: m.rounds
     }));
 
     res.json(result);
@@ -194,7 +209,8 @@ router.get('/:id', async (req, res) => {
       match_date: match.matchDate,
       referee: match.referee.username,
       status: match.status,
-      rounds: match.rounds
+      roundRecordData: match.roundRecordData,
+      scoreBoardData: match.scoreBoardData
     };
 
     res.json(result);
@@ -203,6 +219,7 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: '获取失败' });
   }
 });
+
 
 // 计算搜索结果相关度
 function calculateRelevance(match, query) {

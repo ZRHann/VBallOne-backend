@@ -30,7 +30,8 @@ model Match {
   referee    User     @relation("RefereedMatches", fields: [refereeId], references: [id])
   refereeId  Int
 
-  rounds     Json      @default("[]")
+  roundRecordData Json  
+  scoreBoardData Json  
 }
 
 enum MatchStatus {
