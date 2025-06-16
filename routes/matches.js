@@ -15,7 +15,7 @@ function parseISODate(dateStr) {
 router.get('/', async (req, res) => {
   try {
     const matches = await prisma.match.findMany({
-      orderBy: { matchDate: 'asc' },
+      orderBy: { matchDate: 'desc' },
       include: { referee: true }
     });
 
