@@ -77,7 +77,7 @@ router.post('/', authenticateJWT, async (req, res) => {
 // 修改比赛
 router.put('/:id', authenticateJWT, async (req, res) => {
   const matchId = parseInt(req.params.id);
-  const { name, location, match_date, status, roundRecordData, scoreBoardData } = req.body;
+  const { name, location, match_date, status, roundRecordData, scoreBoardData, referee_username } = req.body;
   
   try {
     const match = await prisma.match.findUnique({ where: { id: matchId } });
@@ -91,6 +91,14 @@ router.put('/:id', authenticateJWT, async (req, res) => {
       return res.status(403).json({ error: '无权限修改该比赛' });
     }
 
+    // 检查是否同时修改裁判和需要裁判权限的字段
+    const isChangingReferee = referee_username !== undefined;
+    const isChangingRefereeOnlyFields = status !== undefined || roundRecordData !== undefined || scoreBoardData !== undefined;
+    
+    if (isChangingReferee && isChangingRefereeOnlyFields) {
+      return res.status(400).json({ error: '不能在同一请求中修改裁判和需要裁判权限的字段（status、roundRecordData、scoreBoardData）' });
+    }
+
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (location !== undefined) updateData.location = location;
@@ -101,6 +109,23 @@ router.put('/:id', authenticateJWT, async (req, res) => {
       }
       updateData.matchDate = parsedDate;
     }
+    
+    // 修改裁判功能
+    if (referee_username !== undefined) {
+      // 只有比赛创建者可以修改裁判
+      if (match.createdById !== req.user.userId) {
+        return res.status(403).json({ error: '只有比赛创建者可以修改裁判' });
+      }
+      
+      // 查找新的裁判用户
+      const newReferee = await prisma.user.findUnique({ where: { username: referee_username } });
+      if (!newReferee) {
+        return res.status(404).json({ error: '裁判用户不存在' });
+      }
+      
+      updateData.refereeId = newReferee.id;
+    }
+    
     if (status !== undefined) {
       if (match.refereeId !== req.user.userId) {
         return res.status(403).json({ error: '只有裁判可以修改比赛状态' });
@@ -113,7 +138,7 @@ router.put('/:id', authenticateJWT, async (req, res) => {
 
     if (roundRecordData !== undefined) {
       if (match.refereeId !== req.user.userId) {
-        return res.status(403).json({ error: '只有裁判可以修改比赛状态' });
+        return res.status(403).json({ error: '只有裁判可以修改比赛记录' });
       }
       if (typeof roundRecordData !== 'object') {
         return res.status(400).json({ error: 'roundRecordData 应为对象' });
@@ -123,7 +148,7 @@ router.put('/:id', authenticateJWT, async (req, res) => {
 
     if (scoreBoardData !== undefined) {
       if (match.refereeId !== req.user.userId) {
-        return res.status(403).json({ error: '只有裁判可以修改比赛状态' });
+        return res.status(403).json({ error: '只有裁判可以修改比分数据' });
       }
       if (typeof scoreBoardData !== 'object') {
         return res.status(400).json({ error: 'scoreBoardData 应为对象' });
